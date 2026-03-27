@@ -82,25 +82,11 @@ fi
 #     sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' "feeds/packages/lang/rust/Makefile"
 # fi
 
-echo "== 开始移植 ROM 升级页面 =="
-# 1. 拉取 UI 源码 (使用 --single-branch 提高速度)
-git clone --depth=1 --single-branch https://github.com/kenzok8/openwrt-packages.git package/temp_rom
-cp -r package/temp_rom/luci-app-romupdate package/
-rm -rf package/temp_rom
-
-# 2. 劫持网页按钮逻辑
-# 使用相对路径，因为此时 shell 已经在 immortalwrt 目录内
-ROM_SH="package/luci-app-romupdate/root/usr/share/romupdate/romupdate.sh"
-if [ -f "$ROM_SH" ]; then
-    sed -i 's|/usr/share/romupdate/update.sh|/usr/bin/xgp-update|g' "$ROM_SH"
-    echo "网页按钮路径已修正为 /usr/bin/xgp-update"
-fi
-
-# 3. 注入版本号标识 (让网页显示“当前版本”为编译日期)
-# 注意：files 目录在 prepare.sh 中被 cp 到当前目录了，所以直接操作 ./files
+echo "== 配置 ROM 升级环境 =="
+# 1. 设置初始版本号
 date +%y.%m.%d > ./files/etc/lenyu_version
 
-# 4. 确保脚本具备执行权限
-# 这里建议使用通配符，防止因为文件名微小差异导致失效
+# 2. 确保自定义脚本具备执行权限
 chmod +x ./files/usr/bin/xgp-update 2>/dev/null
-echo "== ROM 升级页面移植完成 =="
+
+echo "== ROM 升级环境配置完成 =="
