@@ -82,16 +82,25 @@ fi
 #     sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' "feeds/packages/lang/rust/Makefile"
 # fi
 
-echo "Add ROM Update Plugin"
-# 拉取包含界面源码的仓库到临时目录
-git clone --depth=1 https://github.com/kenzok8/openwrt-packages.git package/temp_pks
-# 拷贝 UI 插件到 package 目录
-cp -r package/temp_pks/luci-app-romupdate package/
-# 清理临时目录
-rm -rf package/temp_pks
+echo "== 开始移植 ROM 升级页面 =="
+# 1. 拉取 UI 源码 (使用 --single-branch 提高速度)
+git clone --depth=1 --single-branch https://github.com/kenzok8/openwrt-packages.git package/temp_rom
+cp -r package/temp_rom/luci-app-romupdate package/
+rm -rf package/temp_rom
 
-# 核心：将 Web 页面的“执行升级”按钮关联到我们自定义的脚本路径
-# 这样用户在网页点升级时，实际上运行的是我们放在 files 里的脚本
-if [ -f "package/luci-app-romupdate/root/usr/share/romupdate/romupdate.sh" ]; then
-    sed -i 's|/usr/share/romupdate/update.sh|/usr/bin/xgp-update|g' package/luci-app-romupdate/root/usr/share/romupdate/romupdate.sh
+# 2. 劫持网页按钮逻辑
+# 使用相对路径，因为此时 shell 已经在 immortalwrt 目录内
+ROM_SH="package/luci-app-romupdate/root/usr/share/romupdate/romupdate.sh"
+if [ -f "$ROM_SH" ]; then
+    sed -i 's|/usr/share/romupdate/update.sh|/usr/bin/xgp-update|g' "$ROM_SH"
+    echo "网页按钮路径已修正为 /usr/bin/xgp-update"
 fi
+
+# 3. 注入版本号标识 (让网页显示“当前版本”为编译日期)
+# 注意：files 目录在 prepare.sh 中被 cp 到当前目录了，所以直接操作 ./files
+date +%y.%m.%d > ./files/etc/lenyu_version
+
+# 4. 确保脚本具备执行权限
+# 这里建议使用通配符，防止因为文件名微小差异导致失效
+chmod +x ./files/usr/bin/xgp-update 2>/dev/null
+echo "== ROM 升级页面移植完成 =="
