@@ -1,0 +1,12 @@
+{
+	"luci-app-romupdate": {
+		"description": "Grant access to ROM update",
+		"read": {
+			"cgi-io": [ "download" ],
+			"uci": [ "romupdate" ]
+		},
+		"write": {
+			"uci": [ "romupdate" ]
+		}
+	}
+}
