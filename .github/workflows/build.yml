@@ -52,7 +52,7 @@ jobs:
       - name: Increase Swap Space
         run: |
           SWAP_FILE=/swapfile_custom
-          SWAP_SIZE=4G # 你可以修改为 8G 或更多
+          SWAP_SIZE=8G # 你可以修改为 8G 或更多
           sudo swapoff -a
           sudo fallocate -l $SWAP_SIZE $SWAP_FILE
           sudo chmod 600 $SWAP_FILE
