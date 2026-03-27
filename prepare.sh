@@ -81,3 +81,17 @@ fi
 # if [ -f "feeds/packages/lang/rust/Makefile" ]; then
 #     sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' "feeds/packages/lang/rust/Makefile"
 # fi
+
+echo "Add ROM Update Plugin"
+# 拉取包含界面源码的仓库到临时目录
+git clone --depth=1 https://github.com/kenzok8/openwrt-packages.git package/temp_pks
+# 拷贝 UI 插件到 package 目录
+cp -r package/temp_pks/luci-app-romupdate package/
+# 清理临时目录
+rm -rf package/temp_pks
+
+# 核心：将 Web 页面的“执行升级”按钮关联到我们自定义的脚本路径
+# 这样用户在网页点升级时，实际上运行的是我们放在 files 里的脚本
+if [ -f "package/luci-app-romupdate/root/usr/share/romupdate/romupdate.sh" ]; then
+    sed -i 's|/usr/share/romupdate/update.sh|/usr/bin/xgp-update|g' package/luci-app-romupdate/root/usr/share/romupdate/romupdate.sh
+fi
