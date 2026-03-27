@@ -1,0 +1,6 @@
+config romupdate 'main'
+	option enable '1'
+	option week '5'
+	option hour '05'
+	option minute '01'
+	option auto_update '0'
