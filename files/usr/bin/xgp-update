@@ -1,21 +1,46 @@
 #!/bin/bash
+# 核心环境变量与升级库引入
+export PATH="/usr/sbin:/usr/bin:/sbin:/bin"
+[ -f /lib/upgrade/common.sh ] && . /lib/upgrade/common.sh
+
 REPO="qsyssr/immortalwrt-xgp-auto-build"
 FIRMWARE_NAME="immortalwrt-xgp-v3"
+VERSION_FILE="/etc/lenyu_version"
 
 # 获取云端最新数据
-RELEASE_DATA=$(wget -qO- -t1 -T5 "https://api.github.com/repos/$REPO/releases/latest")
+echo "正在检查 GitHub 最新版本..."
+RELEASE_DATA=$(wget -qO- --no-check-certificate -t1 -T5 "https://api.github.com/repos/$REPO/releases/latest")
 NEW_TAG=$(echo "$RELEASE_DATA" | grep "tag_name" | head -n 1 | awk -F ":" '{print $2}' | sed 's/\"//g;s/,//g;s/ //g')
+
+if [ -z "$NEW_TAG" ]; then
+    echo "错误: 无法获取云端版本信息，请检查网络。"
+    exit 1
+fi
+
+# 检查当前版本，如果是最新则跳过 (可选逻辑)
+# CURRENT_TAG=$(cat $VERSION_FILE 2>/dev/null)
+# [ "$CURRENT_TAG" == "$NEW_TAG" ] && echo "已经是最新版本" && exit 0
 
 # 自动判断引导模式 (EFI 或 Combined)
 [ -d /sys/firmware/efi ] && BOOT="uefi" || BOOT="combined"
 IMG_FILE=$(echo "$RELEASE_DATA" | grep -oE "${FIRMWARE_NAME}[^?]*${BOOT}[^?]*\.img\.gz" | head -n 1)
 
-if [ -n "$IMG_FILE" ]; then
-    mkdir -p /tmp/upgrade && cd /tmp/upgrade
-    wget "https://github.com/$REPO/releases/download/$NEW_TAG/$IMG_FILE" -O "upgrade.img.gz"
-    if [ $? -eq 0 ]; then
-        # 写入版本标识，供 Web 页面读取
-        echo "$NEW_TAG" > /etc/lenyu_version
-        sysupgrade "upgrade.img.gz"
-    fi
+if [ -z "$IMG_FILE" ]; then
+    echo "错误: 未能在 Release 中找到匹配的 $BOOT 固件文件。"
+    exit 1
+fi
+
+# 开始下载升级
+mkdir -p /tmp/upgrade && cd /tmp/upgrade
+echo "准备下载: $IMG_FILE"
+wget --no-check-certificate "https://github.com/$REPO/releases/download/$NEW_TAG/$IMG_FILE" -O "upgrade.img.gz"
+
+if [ $? -eq 0 ]; then
+    echo "下载成功，正在更新版本标识并执行刷机..."
+    echo "$NEW_TAG" > "$VERSION_FILE"
+    # 执行 sysupgrade，通常建议保留配置升级
+    sysupgrade "upgrade.img.gz"
+else
+    echo "错误: 固件下载失败。"
+    exit 1
 fi
