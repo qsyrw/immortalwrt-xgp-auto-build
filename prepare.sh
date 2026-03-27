@@ -16,21 +16,21 @@ if [ -d "immortalwrt" ]; then
     git clean -fd
 else
     echo "repo dir not exists"
-    git clone -b openwrt-24.10 --single-branch --filter=blob:none "https://github.com/immortalwrt/immortalwrt" || { echo "git clone failed"; exit 1; }
+    git clone -b openwrt-25.12 --single-branch --filter=blob:none "https://github.com/immortalwrt/immortalwrt" || { echo "git clone failed"; exit 1; }
     cd immortalwrt
 fi
 
 # reset to 8f6bf3907696dc7de78d1da5e25e0fda223497e8 due to framebuffer compatibility issue
 # git reset --hard 8f6bf3907696dc7de78d1da5e25e0fda223497e8
 
-echo "Lock Kernel version to 6.6.119"
-echo "LINUX_VERSION-6.6 = .119" > include/kernel-6.6
-echo "LINUX_KERNEL_HASH-6.6.119 = 3da09b980bb404cc28793479bb2d6c636522679215ffa65a04c893575253e5e8" >> include/kernel-6.6
+# echo "Lock Kernel version to 6.6.119"
+# echo "LINUX_VERSION-6.6 = .119" > include/kernel-6.6
+# echo "LINUX_KERNEL_HASH-6.6.119 = 3da09b980bb404cc28793479bb2d6c636522679215ffa65a04c893575253e5e8" >> include/kernel-6.6
 
-echo "Reset kernel patches to 6.6.119 state"
+# echo "Reset kernel patches to 6.6.119 state"
 # git checkout 581050ce4e1f28a8e371cbd090f48945e02d4448 -- target/linux/rockchip/patches-6.6/
-git restore --source=c434d02009649241e58e615d8c0666730bf01655 target/linux/generic/
-git restore --source=c434d02009649241e58e615d8c0666730bf01655 target/linux/rockchip/
+# git restore --source=c434d02009649241e58e615d8c0666730bf01655 target/linux/generic/
+# git restore --source=c434d02009649241e58e615d8c0666730bf01655 target/linux/rockchip/
 
 echo "add feeds"
 cat feeds.conf.default > feeds.conf
@@ -82,11 +82,22 @@ fi
 #     sed -i 's/download-ci-llvm=true/download-ci-llvm=false/g' "feeds/packages/lang/rust/Makefile"
 # fi
 
+# 1. 清理可能存在的重复包 (防止编译冲突)
+rm -rf feeds/luci/applications/luci-app-lucky
+rm -rf feeds/luci/applications/luci-app-easytier
+rm -rf feeds/luci/applications/luci-app-adguardhome
+
+# 2. 克隆插件 (增加 --depth=1 加速编译)
+echo "Cloning custom packages..."
+git clone --depth=1 https://github.com/gdy666/luci-app-lucky.git package/lucky
+git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier
+git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
+
 echo "== 配置 ROM 升级环境 =="
-# 1. 设置初始版本号
+# 1. 设置初始版本号 (放在源码目录下的 files)
 date +%y.%m.%d > ./files/etc/lenyu_version
 
-# 2. 确保自定义脚本具备执行权限
+# 2. 再次确保自定义脚本具备执行权限 (2>/dev/null 屏蔽不存在时的报错)
 chmod +x ./files/usr/bin/xgp-update 2>/dev/null
 
 echo "== ROM 升级环境配置完成 =="
