@@ -66,12 +66,12 @@ jobs:
       - name: Prepare
         run: |
           ./prepare.sh
-      - name: Fix Python Frozenlist Compatibility
-        run: |
-          # 进入软件包目录，修改版本号或直接拉取最新版
-          cd immortalwrt/feeds/packages/lang/python/python-frozenlist
-          sed -i 's/1.4.0/1.5.0/g' Makefile
-          # 或者简单的办法：直接删除该包的 build 缓存，尝试让系统重新拉取
+      # - name: Fix Python Frozenlist Compatibility
+       # run: |
+        #  # 进入软件包目录，修改版本号或直接拉取最新版
+        #  cd immortalwrt/feeds/packages/lang/python/python-frozenlist
+        #  sed -i 's/1.4.0/1.5.0/g' Makefile
+        #  # 或者简单的办法：直接删除该包的 build 缓存，尝试让系统重新拉取
           # 如果 feeds 配置文件里版本没更新，可能需要手动更新整个 feeds
       - name: Build
         run: |
