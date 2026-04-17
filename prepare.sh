@@ -93,11 +93,3 @@ git clone --depth=1 https://github.com/gdy666/luci-app-lucky.git package/lucky
 git clone --depth=1 https://github.com/EasyTier/luci-app-easytier.git package/luci-app-easytier
 git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/luci-app-adguardhome
 
-echo "== 配置 ROM 升级环境 =="
-# 1. 设置初始版本号 (放在源码目录下的 files)
-date +%y.%m.%d > ./files/etc/lenyu_version
-
-# 2. 再次确保自定义脚本具备执行权限 (2>/dev/null 屏蔽不存在时的报错)
-chmod +x ./files/usr/bin/xgp-update 2>/dev/null
-
-echo "== ROM 升级环境配置完成 =="
